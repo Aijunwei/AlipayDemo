@@ -7,10 +7,13 @@ import {
     ListView,
     TextInput,
     ScrollView,
-    TouchableOpacity
+    Dimensions,
+    TouchableOpacity,
+    InteractionManager
 } from 'react-native';
 import RCTDeviceEventEmitter from 'RCTDeviceEventEmitter';
 import SearchCityView from './SearchCityView';
+const SCREEN_WITH=Dimensions.get('window').width;
 const MaterialIcons = require('react-native-vector-icons/MaterialIcons');
 const searchIcon = (<MaterialIcons name="search" size={24} color="gray"></MaterialIcons>);
  class City extends Component{
@@ -18,8 +21,11 @@ const searchIcon = (<MaterialIcons name="search" size={24} color="gray"></Materi
         super(props);
     }
     render(){
+        let index=this.props.index,
+            marginR=(index+1)%3===0 ? 0:15;
+
         return (
-            <TouchableOpacity style={{marginRight:30,marginBottom:15,}} onPress={()=>{
+            <TouchableOpacity style={[{marginBottom:10,marginRight:marginR}]} onPress={()=>{
                 this.props.action(this.props.data.name);
             }}>
                 <View style={styles.cityView}>
@@ -45,13 +51,17 @@ class CityCard extends Component{
     getWidth(){
         return this._width||0;
     }
+    _onLayout(layout,index){
+        let height=layout.height;
+        scrollNavItems[index].height=height;
+    }
     render(){
         return (
-           <View ref={this.props.refname} onLayout={(e)=>{console.log(e.nativeEvent);this._width=138;this.height=768}}>
+           <View ref={this.props.refname} onLayout={(e)=>{this._onLayout(e.nativeEvent.layout,this.props.cardID);}}>
                 <Text  style={styles.cardTitle}>{this.props.title}</Text>
          
                 <ListView dataSource={this.state.dataSource} renderRow={
-                    (rowData) => <City data={rowData} action={this.props.action}/>
+                    (rowData,index) => <City data={rowData} action={this.props.action} index={index}/>
                 } style={styles.listViewStyle} contentContainerStyle={styles.rowList}/>
        
            </View>
@@ -92,9 +102,9 @@ export default class CityView extends Component{
         });
         this.state={
             dataSource:this.genDataBlob(ds),
-            stickyText:'当前所在城市'
+            stickyText:'当前所在城市',
+            loading:false
         }
-        console.log(this.props.actions);
     }
     genSectionIDs(){
         let sectionIDs=[];
@@ -135,18 +145,29 @@ export default class CityView extends Component{
         navigator.pop();
     }
     componentDidMount(){
-       // console.log(RCTDeviceEventEmitter);
         this.scrollOption=RCTDeviceEventEmitter.addListener('scrollCityView',(posY)=>{
            this.refs.cityView.scrollTo({
                 y:posY
             });
         });
     }
+    componentWillMount(){
+         InteractionManager.runAfterInteractions(()=>{
+            this.setState({
+                loading:true
+            })
+        });
+    }
     componentWillUnmount(){
         this.scrollOption.remove();
     }
     render(){
-      const {actions,navigator}=this.props;
+     const {actions,navigator}=this.props;
+     if(!this.state.loading){
+          return (<View style={{flex:1,justifyContent:'center',alignItems:'center',}}>
+              </View>
+              );
+      }
         return (
             <View style={{flex:1,backgroundColor:'rgb(245,245,249)'}}>
                 <View style={styles.search} >
@@ -159,17 +180,17 @@ export default class CityView extends Component{
                     }}/>
                 </View>
                 <View style={styles.divider}/>
-                <ScrollView ref="cityView" style={{flex:1,}} onScroll={(e)=>{}}>
+                <ScrollView style={{flex:1,}}  ref="cityView">
                     <View style={styles.cardContainer}>
-                        <CityCard  ref="testscroll0" title="你所在的地区" cities={[CurrentCity]} action={this.selectCity.bind(this)}/>
-                        <CityCard  refname="testscroll1" title="历史访问目的地" cities={HistoryCities}  action={this.selectCity.bind(this)}/>
-                        <CityCard  refname="testscroll2" title="全部热门目的地" cities={HotCities}  action={this.selectCity.bind(this)}/>
+                        <CityCard   cardID={0} title="你所在的地区" cities={[CurrentCity]} action={this.selectCity.bind(this)}/>
+                        <CityCard   cardID={1} title="历史访问目的地" cities={HistoryCities}  action={this.selectCity.bind(this)}/>
+                        <CityCard   cardID={2} title="全部热门目的地" cities={HotCities}  action={this.selectCity.bind(this)}/>
                     </View>
                     <ListView  dataSource={this.state.dataSource} 
                         renderSectionHeader={(sectionData) => {
                             return (
                                 <View style={styles.sectionHeader}>
-                                    <Text style={{ marginLeft: 20, fontSize: 24 }}>{sectionData}</Text>
+                                    <Text style={{ marginLeft: 20, fontSize: 15 }}>{sectionData}</Text>
                                 </View>);
                         } }
                         renderRow={(rowData) => {
@@ -178,110 +199,123 @@ export default class CityView extends Component{
                                     this.selectCity(rowData);
                                 }}>
                                     <View style={styles.cityRow}>
-                                        <Text style={{ color: 'black', fontSize: 22 }}>{rowData}</Text>
+                                        <Text style={{ color: 'black', fontSize: 16 }}>{rowData}</Text>
                                     </View>
                                 </TouchableOpacity>);
                                 
                         } } 
                     style={{backgroundColor:'#FFFFFF'}}/>
-                    
                 </ScrollView>
                 <RightNav />
+            
             </View>
         );
     }
 }
-const RightNav = ()=>{
-    const scrollNavItems=
+const scrollNavItems =
     [{
-        key:'当前',
-        positionY:0
-    },{
-        key:'历史',
-        positionY:150
-    },{
-        key:'热门',
-        positionY:290
-    },{
-        key:'A',
-        positionY:485
-    },{
-        key:'B',
-        positionY:1226
-    },{
-        key:'C',
-        positionY:1966
-    },{
-        key:'D',
-        positionY:2706
-    },{
-        key:'E',
-        positionY:3446
-    },{
-        key:'F',
-        positionY:4186
-    },{
-        key:'G',
-        positionY:4926
-    },{
-        key:'H',
-        positionY:5666
-    },{
-        key:'I',
-        positionY:6406
-    },{
-        key:'G',
-        positionY:7146
-    },{
-        key:'K',
-        positionY:7886
-    },{
-        key:'L',
-        positionY:8626
-    },{
-        key:'M',
-        positionY:8366
-    },{
-        key:'N',
-        positionY:9106
-    },{
-        key:'O',
-        positionY:9846
-    },{
-        key:'P',
-        positionY:10586
-    },{
-        key:'Q',
-        positionY:11326
-    },{
-        key:'R',
-        positionY:3446
-    },{
-        key:'S'
-    },{
-        key:'T'
-    },{
-        key:'U'
-    },{
-        key:'V'
-    },{
-        key:'W'
-    },{
-        key:'X'
-    },{
-        key:'Y'
-    },{
-        key:'Z'
-    }];
+        key: '当前',
+        positionY: 0
+    }, {
+            key: '历史',
+            positionY: 150
+        }, {
+            key: '热门',
+            positionY: 290
+        }, {
+            key: 'A',
+            height:10*40+30,
+            positionY: 485
+        }, {
+            key: 'B',
+            height:10*40+30,
+            positionY: 1226
+        }, {
+            key: 'C',
+            positionY: 1966
+        }, {
+            key: 'D',
+            positionY: 2706
+        }, {
+            key: 'E',
+            positionY: 3446
+        }, {
+            key: 'F',
+            positionY: 4186
+        }, {
+            key: 'G',
+            positionY: 4926
+        }, {
+            key: 'H',
+            positionY: 5666
+        }, {
+            key: 'I',
+            positionY: 6406
+        }, {
+            key: 'G',
+            positionY: 7146
+        }, {
+            key: 'K',
+            positionY: 7886
+        }, {
+            key: 'L',
+            positionY: 8626
+        }, {
+            key: 'M',
+            positionY: 8366
+        }, {
+            key: 'N',
+            positionY: 9106
+        }, {
+            key: 'O',
+            positionY: 9846
+        }, {
+            key: 'P',
+            positionY: 10586
+        }, {
+            key: 'Q',
+            positionY: 11326
+        }, {
+            key: 'R',
+            positionY: 3446
+        }, {
+            key: 'S'
+        }, {
+            key: 'T'
+        }, {
+            key: 'U'
+        }, {
+            key: 'V'
+        }, {
+            key: 'W'
+        }, {
+            key: 'X'
+        }, {
+            key: 'Y'
+        }, {
+            key: 'Z'
+        }];
+
+const RightNav = ()=>{
+    
     for(let i=4;i<29;i++){
-        scrollNavItems[i].positionY=scrollNavItems[i-1].positionY+740;
+       // scrollNavItems[i].positionY=scrollNavItems[i-1].positionY+740;
+        scrollNavItems[i].height=40*10+30;
     }
     let navItems=scrollNavItems.map((item,index)=>{
         return (<Text key={index} 
-                     style={{textAlign:'center',fontSize:20,color:'blue',marginTop:5}} 
+                     style={{textAlign:'center',fontSize:8,color:'blue',marginTop:2}} 
                      onPress={
                          ()=>{
-                             let posY=item.positionY|| 0;
+                             let posY=0;
+                             if(index===1){
+                                 posY=scrollNavItems[index].height;
+                             }
+                             if(index>1){
+                                posY=scrollNavItems.slice(0,index).reduce((item1,item2)=>{
+                                    return {height:item1.height+item2.height}
+                                }).height;
+                             }
                              RCTDeviceEventEmitter.emit('scrollCityView',posY);
                          }
                      }>
@@ -294,20 +328,21 @@ const RightNav = ()=>{
         </View>
         );
 }
-
+const cityCardWidth=(SCREEN_WITH-90)/3,
+      cityCardHeight=cityCardWidth/2-10;
 const styles=StyleSheet.create({
     cardContainer:{
         borderBottomWidth:0.5,
         borderBottomColor:'rgb(228,228,230)'
     },
     cardTitle:{
-        fontSize: 19,
+        fontSize: 13,
         marginLeft:20,
-        marginTop:20
+        marginTop:10
     },
     cityView:{
-        width: 156,
-        height:56,
+        width: cityCardWidth,
+        height: cityCardHeight,
 
         borderRadius:5,
         backgroundColor:'#FFFFFF',
@@ -315,14 +350,13 @@ const styles=StyleSheet.create({
         alignItems:'center'
     },
     cityText:{
-        fontSize:20,
+        fontSize:15,
         color:'black'
     },  
     listViewStyle: {
-        marginTop: 20,
+        marginTop: 10,
         paddingLeft: 20,
-        paddingRight: 20
-
+        paddingRight: 20,
     },
     rowList:{
         justifyContent:'flex-start',
@@ -335,34 +369,38 @@ const styles=StyleSheet.create({
         marginRight:15,
         borderRadius:35,
         height:30,
-        marginTop:70,
+        marginTop:65,
         backgroundColor:'#FFFFFF',
         justifyContent:'center',
-        alignItems:'center',marginBottom:10
+        alignItems:'center',
+        marginBottom:10,
+      
     },
     searchInput:{
-        flex:1,
-        height:48,
-        fontSize: 15
+        width:SCREEN_WITH-80,
+        height:30,
+        fontSize: 14,
+        padding:4,
+        backgroundColor:'#FFFFFF'
     },
     sectionHeader:{
         backgroundColor:'rgb(245,245,249)',
-        height:40,
+        height:30,
         justifyContent:'center',
         borderBottomWidth:0.5,
         borderBottomColor:'rgb(228,228,230)'
     },
     cityRow:{
-        height: 70,
-        marginLeft: 20,
-        marginRight: 20,
+        height: 40,
+        marginLeft: 15,
+        marginRight: 15,
         borderBottomWidth: 0.5,
         borderBottomColor: 'rgb(228,228,230)',
         justifyContent:'center'
     },
     scrollNav:{
         position:'absolute',
-        paddingTop:150,
+        paddingTop:105,
         flex:1,
         right:0,
         top:0,

@@ -7,6 +7,7 @@ import {
     Text,
     TouchableOpacity,
     Animated,
+    ListView,
     Dimensions
 } from 'react-native';
 // 字体
@@ -37,7 +38,7 @@ class FilterItem extends Component{
         }
        Animated.spring(this.anim, {
               toValue: toValue,   // Returns to the start
-              velocity: 3,  // Velocity makes it move
+              velocity: 5,  // Velocity makes it move
             }).start(); 
         this.expanded=!this.expanded;
     }
@@ -54,7 +55,7 @@ class FilterItem extends Component{
                         {
                             rotate:this.anim.interpolate({
                                 inputRange:[0,0.5,1],
-                                outputRange:['0deg','180deg','360deg']
+                                outputRange:['0deg','180deg','0deg']
                             })
                         }
                     ],
@@ -77,12 +78,7 @@ export default class KoubeiStores extends Component{
             <View style={{ flex: 1,  paddingTop:60,}}>
                 <FilterBar />
                 <View style={styles.content}>
-                    <View style={{
-                        backgroundColor:'red',
-                        position:"absolute",
-                        width:200,
-                        height:200
-                    }}></View>
+                   <SelectComp activeIndex={{left:0}} />
                 </View>
             </View>
         );
@@ -90,11 +86,38 @@ export default class KoubeiStores extends Component{
     }
 }
 class SelectComp extends Component{
+    constructor(props){
+        super(props);
+        this.leftListDataSource=new ListView.DataSource({
+            rowHasChanged:(r1,r2) => r1 !== r2
+        });
+        this.renderLeftRow=this.renderLeftRow.bind(this);
+    }
+    componentWillMount(){
+        this.leftListDataSource=this.leftListDataSource.cloneWithRows(['test1','test2','test3'])
+    }
+    renderLeftRow(rowData,sectionID,rowID){
+        let bgStyle={};
+     
+        if(rowID==this.props.activeIndex.left){
+            bgStyle={
+                backgroundColor:'#FFFFFF'
+            }
+        }
+        return (
+            <View style={[styles.leftRow,bgStyle]}>
+                <Text style={{color:'#000000'}}>
+                    {rowData}
+                </Text>
+            </View>
+        );
+    }
     render(){
         return (
-            <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.1)',position:'absolute',left:0,top:0,height:200}}>
-                <Animated.View style={[styles.selectContent,{height:this.props.height||700}]}>
+            <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.3)',}}>
+                <Animated.View style={[styles.selectContent,{height:this.props.height||350}]}>
                     <View style={styles.leftContent}>
+                        <ListView dataSource={this.leftListDataSource} renderRow={this.renderLeftRow}/>
                     </View>
                     <View style={styles.rightContent}></View>
                 </Animated.View>
@@ -106,8 +129,8 @@ const styles=StyleSheet.create({
     container:{
         flexDirection: 'row',
         alignItems:'center',
-        paddingTop:15,
-        paddingBottom:15,
+        paddingTop:5,
+        paddingBottom:5,
         borderBottomWidth:0.5,
         borderColor:'rgba(0,0,0,0.1)'
     },
@@ -115,13 +138,13 @@ const styles=StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        height: 30,
+        height: 25,
         borderRightWidth:0.5,
         flex:1,
         borderRightColor:'rgba(0,0,0,0.5)'
     },
     filterText:{
-        fontSize:22,
+        fontSize:15,
         
     },
     noborder:{
@@ -133,14 +156,18 @@ const styles=StyleSheet.create({
     },
     selectContent:{
         flexDirection:'row',
-    
     },
     leftContent:{
         flex:1,
-        backgroundColor:'rgba(0,0,0,0.2)'
+       backgroundColor:'rgba(240,240,240,0.5)'
     },
     rightContent:{
         flex:1,
         backgroundColor:'#FFFFFF'
+    },
+    leftRow:{
+        height:40,
+        paddingLeft:10,
+        justifyContent:'center'
     }
 });
