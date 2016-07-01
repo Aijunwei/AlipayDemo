@@ -5,8 +5,9 @@ import {bindActionCreators} from 'redux';
 import Interface from '../../components/android/Entry';
 import * as statementActions from '../actions/koubeiStatement';
 import * as cityActions from '../actions/city';
+import * as filterActions from '../actions/filterStores';
 
-const Actions=Object.assign({},statementActions,cityActions);
+const Actions=Object.assign({},statementActions,cityActions,filterActions);
 
 class AppContainer extends Component{
     render(){
@@ -15,10 +16,11 @@ class AppContainer extends Component{
 }
 
 function mapStateToProps(state){
-    const {statement,city}=state;
+    const {statement,city,filter}=state;
     return {
         statement,
-        city
+        city,
+        filter
     };
 }
 

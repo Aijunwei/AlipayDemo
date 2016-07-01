@@ -280,6 +280,8 @@ class KoubeiView extends Component{
 		this.setState({ modalVisible: !this.state.modalVisible });
 	}
 	render(){
+		let {filter,actions}=this.props;
+		console.log(this.props);
 		return (
 			<View style={[styles.container,{marginTop:15}]}>	
 				<ScrollView contentContainerStyle={styles.scrollContainerTab}>
