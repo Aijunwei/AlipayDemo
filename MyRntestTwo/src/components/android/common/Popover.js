@@ -116,7 +116,7 @@ const styles=StyleSheet.create({
         top:0,
         height:height,
         width:width,
-        backgroundColor:'transparent'
+        backgroundColor:'rgba(0,0,0,0.5)'
     },
     popover:{
         position:'absolute',
